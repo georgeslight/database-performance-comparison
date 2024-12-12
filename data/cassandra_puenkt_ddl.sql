@@ -1,0 +1,25 @@
+create table if not exists qdaba.puenkt
+(
+    id_t_puenkt       bigint,
+    id_t_import       int,
+    id_anwendungsfall text,
+    id_mvu            text,
+    id_linie_tu       text,
+    id_fahrt          text,
+    betriebstag       date,
+    fahrt_halt_lauf   int,
+    id_messpunkt      int,
+    id_an_ab          int,
+    soll_bav          timestamp,
+    soll_tu           timestamp,
+    ist_tu            timestamp,
+    id_verspcode      text,
+    insert_time       timestamp,
+    id_t_linie_bav    int,
+    qrelevant         boolean,
+    go_nr             int,
+    id_t_puenkt_fahrt int,
+    manipulation_time timestamp,
+    id_fahrt_tu       text,
+    PRIMARY KEY ((id_t_puenkt), id_linie_tu, id_fahrt, betriebstag)
+);
