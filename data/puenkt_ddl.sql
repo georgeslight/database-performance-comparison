@@ -1,3 +1,5 @@
+CREATE SCHEMA IF NOT EXISTS qdaba;
+
 create table if not exists qdaba.puenkt
 (
     id_t_puenkt       bigint    not null
