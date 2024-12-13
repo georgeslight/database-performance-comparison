@@ -21,7 +21,7 @@ class Database:
     def _connect_postgres(self):
         try:
             self.connection = psycopg2.connect(**self.config)
-            print('Connected to Postgres')
+            print(f"Connected to Postgres database: {self.config.get('dbname')}")
         except Exception as e:
             print(f'Error connecting to Postgres: {e}')
 
