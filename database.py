@@ -12,16 +12,17 @@ class Database:
 
     def connect(self):
         if self.db_type == 'postgres':
-            self._connect_postgres()
+            return self._connect_postgres()
         if self.db_type == 'duckdb':
-            self._connect_duckdb()
+            return self._connect_duckdb()
         if self.db_type == 'cassandra':
-            self._connect_cassandra()
+            return self._connect_cassandra()
 
     def _connect_postgres(self):
         try:
             self.connection = psycopg2.connect(**self.config)
             print(f"Connected to Postgres database: {self.config.get('dbname')}")
+            return self.connection
         except Exception as e:
             print(f'Error connecting to Postgres: {e}')
 
@@ -30,6 +31,7 @@ class Database:
             filepath = self.config.get("filepath")
             self.connection = duckdb.connect(filepath)
             print(f'Connected to DuckDB at {filepath}')
+            return self.connection
         except Exception as e:
             print(f'Error connecting to DuckDB: {e}')
 
@@ -40,6 +42,7 @@ class Database:
             self.session.execute(f"""CREATE KEYSPACE IF NOT EXISTS {self.config.get('keyspace')} WITH replication = {{'class': 'SimpleStrategy', 'replication_factor': '1'}};""")
             self.session.set_keyspace(self.config.get("keyspace"))
             print('Connected to Cassandra')
+            return self.session
         except Exception as e:
             print(f'Error connecting to Cassandra: {e}')
         
