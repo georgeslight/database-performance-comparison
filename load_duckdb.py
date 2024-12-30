@@ -58,6 +58,9 @@ def transfer_data():
                 "bhf",
                 "mvu",
                 "linie",
+                "linienbuendel",
+                "puenkt_fahrt",
+                "puenkt_kat"
             ]
 
             for table in tables_to_copy:
