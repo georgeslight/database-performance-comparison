@@ -52,12 +52,18 @@ def transfer_data():
             conn.execute("CREATE SCHEMA IF NOT EXISTS qdaba;")
 
             tables_to_copy = [
-                "puenkt",
-                "import",
                 "anwendungsfall",
+                "verkehrstraeger",
+                "verkehrsmittel_kategorie",
+                "linie",
+                "kanton",
                 "bhf",
                 "mvu",
-                "linie",
+                "import",
+                "puenkt",
+                "linienbuendel",
+                "puenkt_fahrt",
+                "puenkt_kat"
             ]
 
             for table in tables_to_copy:
