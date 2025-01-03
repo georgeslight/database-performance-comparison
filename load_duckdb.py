@@ -9,12 +9,12 @@ load_dotenv()
 # Configuration for DuckDB and PostgreSQL
 DUCKDB_CONFIG = {"filepath": "./data/my_duckdb.db"}
 
-QDABABAV_POSTGRES_CONFIG = {
-    "dbname": os.getenv("QDABABAV_POSTGRES_DBNAME"),
-    "user": os.getenv("QDABABAV_POSTGRES_USER"),
-    "password": os.getenv("QDABABAV_POSTGRES_PASSWORD"),
-    "host": os.getenv("QDABABAV_POSTGRES_HOST"),
-    "port": int(os.getenv("QDABABAV_POSTGRES_PORT")),
+POSTGRES_CONFIG = {
+    'dbname': os.getenv('POSTGRES_DBNAME'),
+    'user': os.getenv('POSTGRES_USER'),
+    'password': os.getenv('POSTGRES_PASSWORD'),
+    'host': os.getenv('POSTGRES_HOST'),
+    'port': int(os.getenv('POSTGRES_PORT'))
 }
 
 
@@ -39,39 +39,22 @@ def transfer_data():
             print("Attaching PostgreSQL database to DuckDB...")
             conn.execute(
                 f"""
-                ATTACH 'dbname={QDABABAV_POSTGRES_CONFIG['dbname']}
-                    user={QDABABAV_POSTGRES_CONFIG['user']}
-                    host={QDABABAV_POSTGRES_CONFIG['host']}
-                    port={QDABABAV_POSTGRES_CONFIG['port']}
-                    password={QDABABAV_POSTGRES_CONFIG['password']}'
+                ATTACH 'dbname={POSTGRES_CONFIG['dbname']}
+                    user={POSTGRES_CONFIG['user']}
+                    host={POSTGRES_CONFIG['host']}
+                    port={POSTGRES_CONFIG['port']}
+                    password={POSTGRES_CONFIG['password']}'
                 AS pg (TYPE POSTGRES, READ_ONLY);
             """
             )
 
-            print("Creating schema in DuckDB...")
-            conn.execute("CREATE SCHEMA IF NOT EXISTS qdaba;")
+            print(f"Attaching target DuckDB database: {DUCKDB_TARGET_CONFIG['filepath']}")
+            conn.execute(f"ATTACH '{DUCKDB_TARGET_CONFIG['filepath']}' AS target_db;")
 
-            tables_to_copy = [
-                "anwendungsfall",
-                "verkehrstraeger",
-                "verkehrsmittel_kategorie",
-                "linie",
-                "kanton",
-                "bhf",
-                "mvu",
-                "import",
-                "puenkt",
-                "linienbuendel",
-                "puenkt_fahrt",
-                "puenkt_kat"
-            ]
+            print("Copying data from PostgreSQL to DuckDB...")
+            conn.execute("COPY FROM DATABASE pg INTO target_db;")
 
-            for table in tables_to_copy:
-                print(f"Copying {table} table from PostgreSQL to DuckDB...")
-                conn.execute(f"CREATE TABLE qdaba.{table} AS FROM pg.qdababav.{table};")
-                print(f"{table} table copied successfully.")
-
-            print("Data copied successfully.")
+            print("Database copied successfully.")
 
         except Exception as e:
             print(f"Error during data transfer: {e}")
