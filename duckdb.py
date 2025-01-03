@@ -48,8 +48,8 @@ def transfer_data():
             """
             )
 
-            print(f"Attaching target DuckDB database: {DUCKDB_TARGET_CONFIG['filepath']}")
-            conn.execute(f"ATTACH '{DUCKDB_TARGET_CONFIG['filepath']}' AS target_db;")
+            print(f"Attaching target DuckDB database: {DUCKDB_CONFIG['filepath']}")
+            conn.execute(f"ATTACH '{DUCKDB_CONFIG['filepath']}' AS target_db;")
 
             print("Copying data from PostgreSQL to DuckDB...")
             conn.execute("COPY FROM DATABASE pg INTO target_db;")
