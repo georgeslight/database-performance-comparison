@@ -1,17 +1,11 @@
+import io
 import os
 from dotenv import load_dotenv
-
 from database import Database
 
-puenkt_csv = 'data/puenkt.csv'
 load_dotenv()
 
-# Check if variables are loaded correctly
-print(f"Source DB: {os.getenv('QDABABAV_POSTGRES_DBNAME')}")
-print(f"Target DB: {os.getenv('POSTGRES_DBNAME')}")
-
-
-# source
+# Source DB configuration
 QDABABAV_POSTGRES_CONFIG = {
     'dbname': os.getenv('QDABABAV_POSTGRES_DBNAME'),
     'user': os.getenv('QDABABAV_POSTGRES_USER'),
@@ -20,7 +14,7 @@ QDABABAV_POSTGRES_CONFIG = {
     'port': int(os.getenv('QDABABAV_POSTGRES_PORT'))
 }
 
-# target
+# Target DB configuration
 POSTGRES_CONFIG = {
     'dbname': os.getenv('POSTGRES_DBNAME'),
     'user': os.getenv('POSTGRES_USER'),
@@ -30,40 +24,52 @@ POSTGRES_CONFIG = {
 }
 
 try:
-    source_table = 'qdababav.mvu'
-    target_table = 'qdaba.mvu'
-    ddl_path = './data/puenkt_ddl.sql'
+    source_table = 'qdababav.puenkt'
+    target_table = 'qdaba.puenkt'
 
-    # source
-    qdaba = Database(QDABABAV_POSTGRES_CONFIG, 'postgres')
-    qdaba.connect()
-    qdaba_cursor = qdaba.connection.cursor(name='source_cursor')
-    # target
-    postgres = Database(POSTGRES_CONFIG, 'postgres')
-    postgres.connect()
-    pg_cursor = postgres.connection.cursor()
+    # Connect to source and target databases
+    source_db = Database(QDABABAV_POSTGRES_CONFIG, 'postgres')
+    source_db.connect()
+    target_db = Database(POSTGRES_CONFIG, 'postgres')
+    target_db.connect()
 
-    qdaba_cursor.execute(f"SELECT * FROM {source_table};")
-    rows_fetched = 0
+    # Process data month by month
+    for month in range(1, 13):
+        print(f"Processing data for month {month} of 2024...")
 
-    while True:
-        rows = qdaba_cursor.fetchmany(100000)
-        if not rows:
-            break # No more data
+        # Create an in-memory stream for the data
+        data_stream = io.StringIO()
 
-        rows_fetched += len(rows)
+        # Export data from the source database into the stream
+        with source_db.connection.cursor() as source_cursor:
+            query = f"""
+                COPY (
+                    SELECT * FROM {source_table}
+                    WHERE EXTRACT(YEAR FROM betriebstag) = 2024
+                      AND EXTRACT(MONTH FROM betriebstag) = {month}
+                ) TO STDOUT WITH CSV HEADER;
+            """
+            source_cursor.copy_expert(query, data_stream)
 
-        insert_query = f"INSERT INTO {target_table} VALUES ({', '.join(['%s'] * len(rows[0]))})"
-        pg_cursor.executemany(insert_query, rows)
-        postgres.connection.commit()
+        # Reset the stream position to the beginning
+        data_stream.seek(0)
 
-        print(f"Loaded {rows_fetched} rows so far...")
+        # Import data from the stream into the target database
+        with target_db.connection.cursor() as target_cursor:
+            target_cursor.copy_expert(f"""
+                COPY {target_table} FROM STDIN WITH CSV HEADER;
+            """, data_stream)
 
-    print(f"Loaded {rows_fetched} total rows.")
+        # Commit the transaction
+        target_db.connection.commit()
+
+        print(f"Month {month}: Data transferred successfully.")
+
+    print("All months processed successfully.")
+
 except Exception as e:
     print(f"Error: {e}")
 finally:
-    qdaba_cursor.close()
-    qdaba.connection.close()
-    pg_cursor.close()
-    postgres.connection.close()
+    # Close database connections
+    source_db.connection.close()
+    target_db.connection.close()
