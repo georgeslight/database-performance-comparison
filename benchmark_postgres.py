@@ -38,7 +38,7 @@ def execute_query():
                 # Execute the query and measure time
                 start_time = time.time()
                 cursor.execute(query)
-                connection.commit()
+                # connection.commit()
                 end_time = time.time()
 
                 # Measure resource usage after execution
