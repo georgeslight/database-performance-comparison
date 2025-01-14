@@ -13,53 +13,62 @@ POSTGRES_CONFIG = {
     'port': int(os.getenv('POSTGRES_PORT'))
 }
 
-print("Initializing DuckDB connection...")
-with duckdb.connect("./data/my_duckdb.db") as con:
-    try:
-        print("Loading PostgreSQL Scanner extension...")
-        con.load_extension("./.venv/lib/python3.11/site-packages/duckdb/extensions/v1.1.3/linux_amd64_gcc4/postgres_scanner.duckdb_extension")
 
-        print("Attaching PostgreSQL database to DuckDB...")
+try:
+    print("Initializing DuckDB connection...")
+    con = duckdb.connect("my_duckdb.db")
+    print("Loading PostgreSQL Scanner extension...")
+    con.load_extension("./.venv/lib/python3.11/site-packages/duckdb/extensions/v1.1.3/linux_amd64_gcc4/postgres_scanner.duckdb_extension")
+
+    print("Attaching PostgreSQL database to DuckDB...")
+    con.execute(
+            f"""
+            ATTACH 'dbname={POSTGRES_CONFIG['dbname']}
+                user={POSTGRES_CONFIG['user']}
+                host={POSTGRES_CONFIG['host']}
+                port={POSTGRES_CONFIG['port']}
+                password={POSTGRES_CONFIG['password']}'
+            AS pg (TYPE POSTGRES, READ_ONLY);
+        """
+        )
+
+    source_table = 'pg.qdaba.puenkt'
+    target_table = 'qdaba.puenkt'
+
+    for month in range(1, 13):
+        print(f"Processing data for month {month} of 2024...")
+
+        # Export data to a CSV file
+        export_file = f"./data/month_{month}_2024.csv"
         con.execute(
-                f"""
-                ATTACH 'dbname={POSTGRES_CONFIG['dbname']}
-                    user={POSTGRES_CONFIG['user']}
-                    host={POSTGRES_CONFIG['host']}
-                    port={POSTGRES_CONFIG['port']}
-                    password={POSTGRES_CONFIG['password']}'
-                AS pg (TYPE POSTGRES, READ_ONLY);
-            """
-            )
-
-        source_table = 'pg.qdaba.puenkt'
-        target_table = 'qdaba.puenkt'
-
-        for month in range(1, 13):
-            print(f"Processing data for month {month} of 2024...")
-
-            # Export data to a CSV file
-            export_file = f"./data/month_{month}_2024.csv"
-            con.execute(
-                f"""
-                COPY (
-                    SELECT * FROM {source_table}
-                    WHERE EXTRACT(MONTH FROM betriebstag) = {month}
-                ) TO '{export_file}' (FORMAT CSV, HEADER TRUE);
-                    """
-            )
-
-            print(f"Month {month}: Data exported to {export_file}")
-
-            # Import data from the CSV file into DuckDB
-            con.execute(
-                f"""
-                COPY {target_table} FROM '{export_file}' (FORMAT CSV, HEADER TRUE);
+            f"""
+            COPY (
+                SELECT * FROM {source_table}
+                WHERE EXTRACT(MONTH FROM betriebstag) = {month}
+            ) TO '{export_file}' (FORMAT CSV, HEADER TRUE);
                 """
-            )
-            
-            print(f"Month {month}: Data imported successfully.")
+        )
 
-        print("All months processed successfully.")
+        print(f"Month {month}: Data exported to {export_file}")
 
-    except Exception as e:
-        print(f"Error during data transfer: {e}")
+        # Import data from the CSV file into DuckDB
+        con.execute(
+            f"""
+            COPY {target_table} FROM '{export_file}' (FORMAT CSV, HEADER TRUE);
+            """
+        )
+        
+        print(f"Month {month}: Data imported successfully.")
+        con.close()
+
+        # Delete the CSV file after successful import
+        try:
+            os.remove(export_file)
+            print(f"Temporary file {export_file} deleted.")
+        except Exception as delete_error:
+            print(f"Error deleting file {export_file}: {delete_error}")
+
+    print("All months processed successfully.")
+
+except Exception as e:
+    print(f"Error during data transfer: {e}")
