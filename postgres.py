@@ -46,7 +46,7 @@ try:
                 COPY (
                     SELECT * FROM {source_table}
                     WHERE EXTRACT(YEAR FROM betriebstag) = 2024
-                      AND EXTRACT(MONTH FROM betriebstag) = {month}
+                    AND EXTRACT(MONTH FROM betriebstag) = {month}
                 ) TO STDOUT WITH CSV HEADER;
             """
             source_cursor.copy_expert(query, data_stream)

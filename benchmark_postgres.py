@@ -2,7 +2,6 @@ import os
 import time
 import psutil
 from dotenv import load_dotenv
-from database import Database
 import psycopg2
 
 load_dotenv()
@@ -22,7 +21,7 @@ def execute_query():
         # Initialize database connection
         connection = psycopg2.connect(**POSTGRES_CONFIG)
 
-        query_path = './query/punctuality.sql'
+        query_path = './query/postgres_punctuality.sql'
 
         with connection.cursor() as cursor:
             try:
@@ -30,6 +29,7 @@ def execute_query():
                 with open(query_path, 'r') as query_file:
                     query = query_file.read()
 
+                print("Initializing Processes")
                 # Measure resource usage before execution
                 process = psutil.Process()
                 start_cpu = process.cpu_percent(interval=None)
@@ -38,7 +38,7 @@ def execute_query():
                 # Execute the query and measure time
                 start_time = time.time()
                 cursor.execute(query)
-                connection.commit()
+                # connection.commit()
                 end_time = time.time()
 
                 # Measure resource usage after execution
