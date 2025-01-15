@@ -38,7 +38,7 @@ def execute_query():
     try:
         # Initialize database connection
         connection = psycopg2.connect(**POSTGRES_CONFIG)
-        query_path = './query/punctuality.sql'
+        query_path = './query/postgres_punctuality.sql'
 
         with connection.cursor() as cursor:
             try:
@@ -77,6 +77,9 @@ def execute_query():
             print("Database connection closed.")
 
 def plot_results():
+    # Ensure the directory exists
+    os.makedirs('./plots', exist_ok=True)
+
     """Plots CPU and memory usage over time."""
     plt.figure(figsize=(12, 6))
 
@@ -99,6 +102,12 @@ def plot_results():
     plt.grid()
 
     plt.tight_layout()
+
+    # Save the plot
+    output_path = './plots/resource_usage.png'
+    plt.savefig(output_path)
+    print(f"Plot saved to {output_path}")
+
     plt.show()
 
 if __name__ == "__main__":
