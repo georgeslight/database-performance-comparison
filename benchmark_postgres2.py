@@ -77,6 +77,9 @@ def execute_query():
             print("Database connection closed.")
 
 def plot_results():
+    # Ensure the directory exists
+    os.makedirs('./plots', exist_ok=True)
+
     """Plots CPU and memory usage over time."""
     plt.figure(figsize=(12, 6))
 
@@ -97,6 +100,11 @@ def plot_results():
     plt.ylabel("Memory Usage (MB)")
     plt.legend()
     plt.grid()
+
+    # Save the plot
+    output_path = './plots/resource_usage_1.png'
+    plt.savefig(output_path)
+    print(f"Plot saved to {output_path}")
 
     plt.tight_layout()
     plt.show()
