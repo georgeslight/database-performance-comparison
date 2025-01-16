@@ -31,20 +31,22 @@ def monitor_resources(interval=1):
         # Get memory status
         memory = psutil.virtual_memory().percent
         # Get CPU usage
-        cpu = psutil.cpu_percent(interval=1)
+        cpu = psutil.cpu_percent(interval=None)
         # Get Disk usage 
-        disk = psutil.disk_usage('/')
+        disk = psutil.disk_usage('/').percent
         # Execution time
         timestamp = time.time()
 
-        # Append data to the lists
+        # Append metrics
         cpu_usage.append(cpu)
         memory_usage.append(memory)
         disk_usage.append(disk)
         timestamps.append(timestamp)
 
-        # Wait for next interval
-        time.sleep(interval)
+        # Ensure consistent intervals
+        elapsed = time.time() - start
+        if elapsed < interval:
+            time.sleep(interval - elapsed)
 
 def execute_query():
     """Executes the SQL query and measures execution time."""
