@@ -101,6 +101,11 @@ def plot_results():
     plt.legend()
     plt.grid()
 
+    # Save the plot
+    output_path = './plots/resource_usage_1.png'
+    plt.savefig(output_path)
+    print(f"Plot saved to {output_path}")
+
     plt.tight_layout()
 
     # Save the plot
