@@ -29,7 +29,7 @@ def monitor_resources(interval=1):
     
     while monitoring:
         # Get memory status
-        memory = psutil.virtual_memory().perecent
+        memory = psutil.virtual_memory().percent
         # Get CPU usage
         cpu = psutil.cpu_percent(interval=1)
         # Get Disk usage 
