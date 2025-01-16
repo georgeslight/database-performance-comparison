@@ -2,6 +2,7 @@ import os
 import time
 import psutil
 import threading
+import csv
 from dotenv import load_dotenv
 import psycopg2
 import matplotlib.pyplot as plt
@@ -16,38 +17,36 @@ POSTGRES_CONFIG = {
     'port': int(os.getenv('POSTGRES_PORT'))
 }
 
-# Global variables to track metrics
-cpu_usage = []
-memory_usage = []
-timestamps = []
-disk_usage = []
+# Global variables to control monitoring
 monitoring = True
 
-def monitor_resources(interval=1):
-    """Monitor CPU and memory usage."""
-    global monitoring, cpu_usage, memory_usage, timestamps
+def monitor_resources(file_path, interval=1):
+    """Monitor CPU, memory, and disk usage and write directly to a CSV file."""
+    global monitoring
     
-    while monitoring:
-        start = time.time()
-        # Get memory status
-        memory = psutil.virtual_memory().percent
-        # Get CPU usage
-        cpu = psutil.cpu_percent(interval=None)
-        # Get Disk usage 
-        disk = psutil.disk_usage('/').percent
-        # Execution time
-        timestamp = time.time()
+    with open(file_path, 'a', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(["Timestamp", "CPU Usage (%)", "Memory Usage (%)", "Disk Usage (%)"])
+        
+        while monitoring:
+            start = time.time()
+            # Get memory status
+            memory = psutil.virtual_memory().percent
+            # Get CPU usage
+            cpu = psutil.cpu_percent(interval=None)
+            # Get Disk usage
+            disk = psutil.disk_usage('/').percent
+            # Execution time
+            timestamp = time.time()
 
-        # Append metrics
-        cpu_usage.append(cpu)
-        memory_usage.append(memory)
-        disk_usage.append(disk)
-        timestamps.append(timestamp)
+            # Write metrics
+            writer.writerow([timestamp, cpu, memory, disk])
+            file.flush()  # Ensure data is written to file
 
-        # Ensure consistent intervals
-        elapsed = time.time() - start
-        if elapsed < interval:
-            time.sleep(interval - elapsed)
+            # Ensure consistent intervals
+            elapsed = time.time() - start
+            if elapsed < interval:
+                time.sleep(interval - elapsed)
 
 def execute_query():
     """Executes the SQL query and measures execution time."""
@@ -64,7 +63,7 @@ def execute_query():
                 query = query_file.read()
 
             # Start the monitoring thread
-            monitor_thread = threading.Thread(target=monitor_resources, args=(1,))
+            monitor_thread = threading.Thread(target=monitor_resources, args=("resource_usage.csv", 1))
             monitor_thread.start()
 
             # Execute the query and measure time
@@ -95,12 +94,3 @@ def execute_query():
 
 if __name__ == "__main__":
     execute_query()
-
-    # Save monitoring results to a file for further analysis
-    with open("resource_usage.csv", "a") as file:  # Use 'a' mode to append
-        # If the file is empty, write the header
-        if file.tell() == 0:
-            file.write("Timestamp,CPU Usage (%),Memory Usage (%),Disk Usage (%)\n")
-        # Append the new data
-        for ts, cpu, mem, disk in zip(timestamps, cpu_usage, memory_usage, disk_usage):
-            file.write(f"{ts},{cpu},{mem},{disk}\n")
