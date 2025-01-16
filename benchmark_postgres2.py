@@ -28,6 +28,7 @@ def monitor_resources(interval=1):
     global monitoring, cpu_usage, memory_usage, timestamps
     
     while monitoring:
+        start = time.time()
         # Get memory status
         memory = psutil.virtual_memory().percent
         # Get CPU usage
