@@ -2,39 +2,6 @@ SELECT
     p.betriebstag,
     SUM(
         CASE
-            WHEN (
-                CASE
-                    WHEN DATE_PART('epoch', p.ist_tu - p.soll_tu) < 43200::DOUBLE PRECISION THEN DATE_PART('epoch', p.ist_tu - p.soll_tu)
-                    ELSE DATE_PART('epoch', p.ist_tu - p.soll_tu) - 86400::DOUBLE PRECISION
-                END
-            ) <= pk.puenkt_kat THEN 1
-            ELSE 0
-        END
-    ) AS punctual_trips,
-    SUM(
-        CASE
-            WHEN ABS(
-                CASE
-                    WHEN DATE_PART('epoch', p.ist_tu - p.soll_tu) < 43200::DOUBLE PRECISION THEN DATE_PART('epoch', p.ist_tu - p.soll_tu)
-                    ELSE DATE_PART('epoch', p.ist_tu - p.soll_tu) - 86400::DOUBLE PRECISION
-                END
-            ) > pk.puenkt_kat THEN 1
-            ELSE 0
-        END
-    ) AS delayed_trips
-FROM
-    qdaba.puenkt p
-    JOIN qdaba.puenkt_kat pk ON p.id_anwendungsfall::TEXT = pk.id_anwendungsfall::TEXT
-GROUP BY
-    p.betriebstag
-ORDER BY
-    p.betriebstag;
-
-
-SELECT
-    p.betriebstag,
-    SUM(
-        CASE
             WHEN p.tu_delta IS NOT NULL
             AND (
                 (
