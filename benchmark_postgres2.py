@@ -25,10 +25,10 @@ monitoring = True
 def monitor_resources(interval=0.1):
     """Monitor CPU and memory usage."""
     global monitoring, cpu_usage, memory_usage, timestamps
-    process = psutil.Process()
+    
     while monitoring:
-        cpu_usage.append(process.cpu_percent(interval=None))
-        memory_usage.append(process.memory_info().rss / (1024 ** 2))  # Convert to MB
+        cpu_usage.append(psutil.cpu_percent(interval=None))
+        memory_usage.append(psutil.virtual_memory().total >> 20)  # Convert to MB
         timestamps.append(time.time())
         time.sleep(interval)
 
@@ -104,7 +104,7 @@ def plot_results():
     plt.tight_layout()
 
     # Save the plot
-    output_path = './plots/resource_usage.png'
+    output_path = './plots/resource_usage2.png'
     plt.savefig(output_path)
     print(f"Plot saved to {output_path}")
 
