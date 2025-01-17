@@ -1,53 +1,80 @@
 import os
 import time
 import psutil
+import threading
+import csv
 from dotenv import load_dotenv
-from database import Database
+import duckdb
+import matplotlib.pyplot as plt
 
 load_dotenv()
 
-DUCKDB_CONFIG = {"filepath": "./data/my_duckdb.db"}
+# Global variables to control monitoring
+monitoring = True
 
+def monitor_resources(file_path, interval=1):
+    """Monitor CPU, memory, and disk usage and write directly to a CSV file."""
+    global monitoring
+    
+    with open(file_path, 'a', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(["Timestamp", "CPU Usage (%)", "Memory Usage (%)", "Disk Usage (%)"])
+        
+        while monitoring:
+            start = time.time()
+            # Get memory status
+            memory = psutil.virtual_memory().percent
+            # Get CPU usage
+            cpu = psutil.cpu_percent(interval=None)
+            # Get Disk usage
+            disk = psutil.disk_usage('/').percent
+            # Execution time
+            timestamp = time.time()
+
+            # Write metrics
+            writer.writerow([timestamp, cpu, memory, disk])
+            file.flush()  # Ensure data is written to file
+
+            # Ensure consistent intervals
+            elapsed = time.time() - start
+            if elapsed < interval:
+                time.sleep(interval - elapsed)
 
 def execute_query():
     """Executes the SQL query and measures execution time."""
+    global monitoring
 
-    duck = Database(DUCKDB_CONFIG, 'duckdb')
-    view_path = './query/v_dpm_vorberechnet_neu.sql'
+    try:
+        query_path = './query/duckdb_punctuality.sql'
 
-    with duck.connect() as conn:
-        try:
-            cur = conn.cursor()
-            # Read the query file safely
-            with open(view_path, 'r') as query_file:
+        with duckdb.connect("my_duckdb.db") as con:
+            # Read the SQL query from the file
+            with open(query_path, 'r') as query_file:
                 query = query_file.read()
 
-            # Measure resource usage before execution
-            process = psutil.Process()
-            start_cpu = process.cpu_percent(interval=0.1)  # Short interval to get initial CPU usage
-            start_memory = process.memory_info().rss
+            # Start the monitoring thread
+            monitor_thread = threading.Thread(target=monitor_resources, args=("resource_usage_duck.csv", 1))
+            monitor_thread.start()
 
             # Execute the query and measure time
+            print("Executing query...")
             start_time = time.time()
-            cur.execute(query)
-            conn.commit()  # Commit changes at the connection level
+            con.execute(query)
             end_time = time.time()
+            monitoring = False  # Stop monitoring
 
-            # Measure resource usage after execution
-            end_cpu = process.cpu_percent(interval=0.1)  # Short interval to capture final CPU usage
-            end_memory = process.memory_info().rss
+            print("Query executed successfully.")
+            print(f"Execution time: {end_time - start_time:.3f} seconds")
 
-            # Output results
-            print(f"Query executed successfully.")
-            print(f"Execution time: {end_time - start_time:.2f} seconds")
-            print(f"CPU usage: {end_cpu - start_cpu:.2f}%")
-            print(f"Memory usage: {(end_memory - start_memory) / (1024 ** 2):.2f} MB")
+            # Wait for the monitor thread to finish
+            monitor_thread.join()
 
-        except Exception as e:
-            print(f"An error occurred: {e}")
-        finally:
-            # Always ensure cursor and connection are closed
-            cur.close()
+            print("Query executed successfully.")
+            print(f"Execution time: {end_time - start_time:.3f} seconds")
+
+    except Exception as e:
+        monitoring = False  # Stop resource monitoring in case of error
+        print(f"An error occurred: {e}")
 
 
 if __name__ == "__main__":

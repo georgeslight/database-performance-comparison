@@ -1,7 +1,7 @@
 import io
 import os
 from dotenv import load_dotenv
-import load_duckdb
+import duckdb
 
 load_dotenv()
 
@@ -15,7 +15,7 @@ POSTGRES_CONFIG = {
 
 try:
     print("Initializing DuckDB connection...")
-    con = load_duckdb.connect("my_duckdb.db")
+    con = duckdb.connect("my_duckdb.db")
     print("Loading PostgreSQL Scanner extension...")
     con.load_extension("./.venv/lib/python3.11/site-packages/duckdb/extensions/v1.1.3/linux_amd64_gcc4/postgres_scanner.duckdb_extension")
     con.execute("SET memory_limit='32GB';") 
