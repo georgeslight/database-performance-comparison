@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # Load the CSV data
-file_path = './csv/resource_usage.csv'
+file_path = './csv/resource_usage_3.csv'
 data = pd.read_csv(file_path, skipinitialspace=True)
 
 # Strip column names of any extra spaces

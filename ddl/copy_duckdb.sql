@@ -355,7 +355,9 @@ INSERT INTO
 SELECT
     *
 FROM
-    pg.qdaba.puenkt_kat
+    pg.qdaba.puenkt_kat;
+
+
 CREATE TABLE
     qdaba.puenkt (
         id_t_puenkt BIGINT PRIMARY KEY,

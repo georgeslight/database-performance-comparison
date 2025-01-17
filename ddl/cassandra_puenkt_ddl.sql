@@ -1,25 +1,28 @@
-create table if not exists qdaba.puenkt
-(
-    id_t_puenkt       bigint,
-    id_t_import       int,
-    id_anwendungsfall text,
-    id_mvu            text,
-    id_linie_tu       text,
-    id_fahrt          text,
-    betriebstag       date,
-    fahrt_halt_lauf   int,
-    id_messpunkt      int,
-    id_an_ab          int,
-    soll_bav          timestamp,
-    soll_tu           timestamp,
-    ist_tu            timestamp,
-    id_verspcode      text,
-    insert_time       timestamp,
-    id_t_linie_bav    int,
-    qrelevant         boolean,
-    go_nr             int,
-    id_t_puenkt_fahrt int,
-    manipulation_time timestamp,
-    id_fahrt_tu       text,
-    PRIMARY KEY ((id_t_puenkt), id_linie_tu, id_fahrt, betriebstag)
-);
+CREATE TABLE IF NOT EXISTS
+    qdaba.puenkt (
+        id_t_puenkt BIGINT,
+        id_t_import INT,
+        id_anwendungsfall TEXT,
+        id_mvu TEXT,
+        id_linie_tu TEXT,
+        id_fahrt TEXT,
+        betriebstag date,
+        fahrt_halt_lauf INT,
+        id_messpunkt INT,
+        id_an_ab INT,
+        soll_bav TIMESTAMP,
+        soll_tu TIMESTAMP,
+        ist_tu TIMESTAMP,
+        id_verspcode TEXT,
+        insert_time TIMESTAMP,
+        id_t_linie_bav INT,
+        qrelevant BOOLEAN,
+        go_nr INT,
+        id_t_puenkt_fahrt INT,
+        manipulation_time TIMESTAMP,
+        id_fahrt_tu TEXT,
+        id_t_lb INTEGER, -- Primary Key qdaba.linienbuendel
+        direction_id SMALLINT, -- qdaba.puenkt_fahrt
+        gueltigkeit_start, -- qdaba.linie_lb
+        PRIMARY KEY ((id_mvu))
+    );
