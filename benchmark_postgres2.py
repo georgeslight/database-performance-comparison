@@ -73,9 +73,6 @@ def execute_query():
             end_time = time.time()
             monitoring = False  # Stop monitoring
 
-            print("Query executed successfully.")
-            print(f"Execution time: {end_time - start_time:.3f} seconds")
-
             # Wait for the monitor thread to finish
             monitor_thread.join()
 
