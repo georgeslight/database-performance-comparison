@@ -4,12 +4,6 @@ INSTALL postgres;
 LOAD postgres;
 
 
-ATTACH 'dbname=qdaba user=postgres host=192.168.100.103 port=5432 password=oracle' AS pg (
-    TYPE POSTGRES,
-    READ_ONLY
-);
-
-
 CREATE SCHEMA qdaba;
 
 
@@ -322,47 +316,6 @@ FROM
     pg.qdaba.linie;
 
 
--------------------------------- Still have to create and INSERT --------------------------------
-CREATE TABLE
-    qdaba.linie_lb (
-        id_t_linie_lb INTEGER PRIMARY KEY,
-        id_t_linie INTEGER NOT NULL REFERENCES qdaba.linie (id_t_linie),
-        id_t_lb INTEGER NOT NULL REFERENCES qdaba.linienbuendel (id_t_lb),
-        gueltigkeit_start DATE NOT NULL,
-        gueltigkeit_end DATE
-    );
-
-
-INSERT INTO
-    qdaba.linie_lb (
-        id_t_linie_lb,
-        id_t_linie,
-        id_t_lb,
-        gueltigkeit_start,
-        gueltigkeit_end
-    )
-SELECT
-    id_t_linie_lb,
-    id_t_linie,
-    id_t_lb,
-    -- Extract gueltigkeit_start and gueltigkeit_end from the range string
-    CAST(
-        SUBSTRING(gueltigkeit, 2, POSITION(',' IN gueltigkeit) - 2) AS DATE
-    ) AS gueltigkeit_start,
-    CASE
-        WHEN LENGTH(gueltigkeit) > 13 THEN CAST(
-            SUBSTRING(
-                gueltigkeit,
-                POSITION(',' IN gueltigkeit) + 1,
-                LENGTH(gueltigkeit) - POSITION(',' IN gueltigkeit) - 1
-            ) AS DATE
-        )
-        ELSE NULL
-    END AS gueltigkeit_end
-FROM
-    pg.qdaba.linie_lb;
-
-
 CREATE TABLE
     qdaba.puenkt_fahrt (
         id_t_puenkt_fahrt INTEGER PRIMARY KEY,
@@ -446,3 +399,91 @@ SELECT
     *
 FROM
     pg.qdaba.puenkt;
+
+
+CREATE TABLE
+    qdaba.linienbuendel (
+        id_lb VARCHAR(4) NOT NULL,
+        lb_kurz VARCHAR(20) NOT NULL,
+        lb_lang VARCHAR(50) NOT NULL,
+        id_anwendungsfall VARCHAR(4) NOT NULL,
+        id_vmkat INTEGER NOT NULL,
+        id_t_lb INTEGER PRIMARY KEY,
+        gueltigkeit_start DATE NOT NULL,
+        gueltigkeit_end DATE,
+        FOREIGN KEY (id_anwendungsfall, id_vmkat) REFERENCES qdaba.verkehrsmittel_kategorie (id_anwendungsfall, id_vmkat)
+    );
+
+
+INSERT INTO
+    qdaba.linienbuendel (
+        id_lb,
+        lb_kurz,
+        lb_lang,
+        id_anwendungsfall,
+        id_vmkat,
+        id_t_lb,
+        gueltigkeit_start,
+        gueltigkeit_end
+    )
+SELECT
+    id_lb,
+    lb_kurz,
+    lb_lang,
+    id_anwendungsfall,
+    id_vmkat,
+    id_t_lb,
+    CAST(
+        SUBSTRING(gueltigkeit, 2, POSITION(',' IN gueltigkeit) - 2) AS DATE
+    ) AS gueltigkeit_start,
+    CASE
+        WHEN LENGTH(gueltigkeit) > 13 THEN CAST(
+            SUBSTRING(
+                gueltigkeit,
+                POSITION(',' IN gueltigkeit) + 1,
+                LENGTH(gueltigkeit) - POSITION(',' IN gueltigkeit) - 1
+            ) AS DATE
+        )
+        ELSE NULL
+    END AS gueltigkeit_end
+FROM
+    pg.qdaba.linienbuendel;
+
+
+CREATE TABLE
+    qdaba.linie_lb (
+        id_t_linie_lb INTEGER PRIMARY KEY,
+        id_t_linie INTEGER NOT NULL REFERENCES qdaba.linie (id_t_linie),
+        id_t_lb INTEGER NOT NULL REFERENCES qdaba.linienbuendel (id_t_lb),
+        gueltigkeit_start DATE NOT NULL,
+        gueltigkeit_end DATE
+    );
+
+
+INSERT INTO
+    qdaba.linie_lb (
+        id_t_linie_lb,
+        id_t_linie,
+        id_t_lb,
+        gueltigkeit_start,
+        gueltigkeit_end
+    )
+SELECT
+    id_t_linie_lb,
+    id_t_linie,
+    id_t_lb,
+    CAST(
+        SUBSTRING(gueltigkeit, 2, POSITION(',' IN gueltigkeit) - 2) AS DATE
+    ) AS gueltigkeit_start,
+    CASE
+        WHEN LENGTH(gueltigkeit) > 13 THEN CAST(
+            SUBSTRING(
+                gueltigkeit,
+                POSITION(',' IN gueltigkeit) + 1,
+                LENGTH(gueltigkeit) - POSITION(',' IN gueltigkeit) - 1
+            ) AS DATE
+        )
+        ELSE NULL
+    END AS gueltigkeit_end
+FROM
+    pg.qdaba.linie_lb;
