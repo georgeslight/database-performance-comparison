@@ -31,7 +31,7 @@ WITH filtered_puenkt_kat AS (
      pk.puenkt_kat,
      pk.move_type
  FROM
-     puenkt_temp p
+     puenkt p
      LEFT JOIN puenkt_fahrt pf ON pf.id_t_puenkt_fahrt = p.id_t_puenkt_fahrt 
      LEFT JOIN linie l ON l.id_t_linie = p.id_t_linie_bav
      LEFT JOIN linie_lb llb ON llb.id_t_linie = l.id_t_linie
