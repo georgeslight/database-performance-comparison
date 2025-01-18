@@ -3,21 +3,21 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # Load the CSV data
-file_path = './csv/resource_usage_3.csv'
+file_path = './csv/resource_usage_duck_final_2.csv'
 data = pd.read_csv(file_path, skipinitialspace=True)
 
 # Strip column names of any extra spaces
 data.columns = data.columns.str.strip()
 
 # Check if the 'Timestamp' column exists
-if 'Timestamp' not in data.columns:
-    print("Error: 'Timestamp' column not found in the CSV file. Check your file and try again.")
+if 'Elapsed Seconds' not in data.columns:
+    print("Error: 'Elapsed Seconds' column not found in the CSV file. Check your file and try again.")
     print(f"Available columns: {data.columns.tolist()}")
     exit(1)
 
 # Convert timestamps to relative time (seconds)
-start_time = data['Timestamp'].min()
-data['Time (s)'] = data['Timestamp'] - start_time
+start_time = data['Elapsed Seconds'].min()
+data['Time (s)'] = data['Elapsed Seconds'] - start_time
 
 # Calculate averages
 avg_cpu = data['CPU Usage (%)'].mean()
