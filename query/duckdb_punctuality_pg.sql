@@ -77,16 +77,14 @@ FROM
                     lb.id_t_lb,
                     pf.direction_id
                 FROM
-                    qdaba.puenkt p_2
-                    LEFT JOIN qdaba.puenkt_fahrt pf ON pf.id_t_puenkt_fahrt = p_2.id_t_puenkt_fahrt
-                    LEFT JOIN qdaba.linie l ON l.id_t_linie = p_2.id_t_linie_bav
-                    LEFT JOIN qdaba.linie_lb llb ON llb.id_t_linie = l.id_t_linie
-                    AND llb.gueltigkeit @> p_2.betriebstag
-                    LEFT JOIN qdaba.linienbuendel lb ON lb.id_t_lb = llb.id_t_lb
-                    AND lb.gueltigkeit @> p_2.betriebstag
+                    pg.qdaba.puenkt p_2
+                    LEFT JOIN pg.qdaba.puenkt_fahrt pf ON pf.id_t_puenkt_fahrt = p_2.id_t_puenkt_fahrt
+                    LEFT JOIN pg.qdaba.linie l ON l.id_t_linie = p_2.id_t_linie_bav
+                    LEFT JOIN pg.qdaba.linie_lb llb ON llb.id_t_linie = l.id_t_linie AND p_2.betriebstag BETWEEN CAST(substring(llb.gueltigkeit, 2, 10) AS DATE) AND CAST(nullif(substring(llb.gueltigkeit, 13, length(llb.gueltigkeit) - 13), '') AS DATE)
+                    LEFT JOIN pg.qdaba.linienbuendel lb ON lb.id_t_lb = llb.id_t_lb AND p_2.betriebstag BETWEEN CAST(substring(lb.gueltigkeit, 2, 10) AS DATE) AND CAST(nullif(substring(lb.gueltigkeit, 13, length(lb.gueltigkeit) - 13), '') AS DATE)
             ) p_1
     ) p
-    JOIN qdaba.puenkt_kat pk ON p.id_anwendungsfall::TEXT = pk.id_anwendungsfall::TEXT
+    JOIN pg.qdaba.puenkt_kat pk ON p.id_anwendungsfall::TEXT = pk.id_anwendungsfall::TEXT
     AND (
         pk.move_type::TEXT = 'ALL'::TEXT
         OR pk.move_type::TEXT = CASE
