@@ -17,6 +17,24 @@ POSTGRES_CONFIG = {
     'port': int(os.getenv('POSTGRES_PORT'))
 }
 
+def get_next_filename(extension=".csv"):
+    """Finds the next available filename by scanning all CSV files and using the highest number + 1."""
+    
+    existing_files = [f for f in os.listdir() if f.endswith(extension)]
+    existing_numbers = []
+
+    for filename in existing_files:
+        try:
+            # Split filename by underscores and take the last part before .csv
+            number_part = filename.split('_')[-1].replace(extension, "")
+            number = int(number_part)  # Convert to integer
+            existing_numbers.append(number)
+        except ValueError:
+            continue  # Ignore files that don't have a number
+
+    next_number = max(existing_numbers) + 1 if existing_numbers else 1
+    return f"postgres_{next_number}{extension}"
+
 # Global variables to control monitoring
 monitoring = True
 
@@ -25,32 +43,36 @@ def monitor_resources(file_path, interval=1):
     global monitoring
     
     start_time = time.time()  # Record the start time
+
+    # Check if the file already exists
+    write_header = not os.path.exists(file_path) or os.stat(file_path).st_size == 0
     
     with open(file_path, 'a', newline='') as file:
         writer = csv.writer(file)
-        writer.writerow(["Elapsed Seconds", "CPU Usage (%)", "Memory Usage (%)", "Disk Usage (%)"])
+        if write_header:
+            writer.writerow(["Elapsed Seconds", "CPU Usage (%)", "Memory Usage (%)", "Disk Usage (%)"])
         
-        while monitoring:
-            iteration_start = time.time()
+            while monitoring:
+                iteration_start = time.time()
 
-            # Calculate elapsed time in seconds
-            elapsed_seconds = iteration_start - start_time
+                # Calculate elapsed time in seconds
+                elapsed_seconds = iteration_start - start_time
 
-            # Get memory status
-            memory = psutil.virtual_memory().percent
-            # Get CPU usage
-            cpu = psutil.cpu_percent(interval=None)
-            # Get Disk usage
-            disk = psutil.disk_usage('/').percent
+                # Get memory status
+                memory = psutil.virtual_memory().percent
+                # Get CPU usage
+                cpu = psutil.cpu_percent(interval=None)
+                # Get Disk usage
+                disk = psutil.disk_usage('/').percent
 
-            # Write metrics
-            writer.writerow([round(elapsed_seconds, 2), cpu, memory, disk])
-            file.flush()  # Ensure data is written to file
+                # Write metrics
+                writer.writerow([round(elapsed_seconds, 2), cpu, memory, disk])
+                file.flush()  # Ensure data is written to file
 
-            # Ensure consistent intervals
-            elapsed = time.time() - iteration_start
-            if elapsed < interval:
-                time.sleep(interval - elapsed)
+                # Ensure consistent intervals
+                elapsed = time.time() - iteration_start
+                if elapsed < interval:
+                    time.sleep(interval - elapsed)
 
 def execute_query():
     """Executes the SQL query and measures execution time."""
@@ -66,8 +88,11 @@ def execute_query():
             with open(query_path, 'r') as query_file:
                 query = query_file.read()
 
+            # Get the next available filename
+            temp_file_path  = get_next_filename()
+
             # Start the monitoring thread
-            monitor_thread = threading.Thread(target=monitor_resources, args=("resource_usage_psql_1.csv", 1))
+            monitor_thread = threading.Thread(target=monitor_resources, args=(temp_file_path, 1))
             monitor_thread.start()
 
             # Execute the query and measure time
@@ -80,17 +105,17 @@ def execute_query():
             # Wait for the monitor thread to finish
             monitor_thread.join()
 
+            execution_time = round(end_time - start_time, 2)
+            new_file_path = f"{execution_time}_{temp_file_path}"
+            # Rename the file
+            os.rename(temp_file_path, new_file_path)
+
             print("Query executed successfully.")
             print(f"Execution time: {end_time - start_time:.3f} seconds")
 
     except Exception as e:
         monitoring = False  # Stop resource monitoring in case of error
         print(f"An error occurred: {e}")
-    finally:
-        # Ensure the connection is closed properly
-        if 'connection' in locals() and connection:
-            connection.close()
-            print("Database connection closed.")
 
 
 if __name__ == "__main__":
