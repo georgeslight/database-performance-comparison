@@ -9,6 +9,24 @@ import matplotlib.pyplot as plt
 
 load_dotenv()
 
+def get_next_filename(extension=".csv"):
+    """Finds the next available filename by scanning all CSV files and using the highest number + 1."""
+    
+    existing_files = [f for f in os.listdir() if f.endswith(extension)]
+    existing_numbers = []
+
+    for filename in existing_files:
+        try:
+            # Split filename by underscores and take the last part before .csv
+            number_part = filename.split('_')[-1].replace(extension, "")
+            number = int(number_part)  # Convert to integer
+            existing_numbers.append(number)
+        except ValueError:
+            continue  # Ignore files that don't have a number
+
+    next_number = max(existing_numbers) + 1 if existing_numbers else 1
+    return f"duckdb_by_hour_{next_number}{extension}"
+
 # Global variables to control monitoring
 monitoring = True
 
@@ -49,15 +67,18 @@ def execute_query():
     global monitoring
 
     try:
-        query_path = './query/duckdb_punctuality.sql'
+        query_path = './query/duckdb_by_hour.sql'
 
-        with duckdb.connect("my_duckdb.db") as con:
+        with duckdb.connect("my_new_duckdb.db") as con:
             # Read the SQL query from the file
             with open(query_path, 'r') as query_file:
                 query = query_file.read()
 
+            # Get the next available filename
+            temp_file_path = get_next_filename()
+
             # Start the monitoring thread
-            monitor_thread = threading.Thread(target=monitor_resources, args=("resource_usage_duck_1.csv", 1))
+            monitor_thread = threading.Thread(target=monitor_resources, args=(temp_file_path, 1))
             monitor_thread.start()
 
             # Execute the query and measure time
@@ -70,8 +91,13 @@ def execute_query():
             # Wait for the monitor thread to finish
             monitor_thread.join()
 
+            execution_time = round(end_time - start_time, 2)
+            new_file_path = f"{execution_time}_{temp_file_path}"
+            # Rename the file
+            os.rename(temp_file_path, new_file_path)
+
             print("Query executed successfully.")
-            print(f"Execution time: {end_time - start_time:.3f} seconds")
+            print(f"Execution time: {end_time - start_time:.2f} seconds")
 
     except Exception as e:
         monitoring = False  # Stop resource monitoring in case of error
