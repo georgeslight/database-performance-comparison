@@ -9,6 +9,9 @@ import matplotlib.pyplot as plt
 
 load_dotenv()
 
+# Global variables to control monitoring
+monitoring = True
+
 def get_next_filename(extension=".csv"):
     """Finds the next available filename by scanning all CSV files and using the highest number + 1."""
     
@@ -25,10 +28,7 @@ def get_next_filename(extension=".csv"):
             continue  # Ignore files that don't have a number
 
     next_number = max(existing_numbers) + 1 if existing_numbers else 1
-    return f"clickhouse_by_hour_{next_number}{extension}"
-
-# Global variables to control monitoring
-monitoring = True
+    return f"clickhouse_by_hour_pg_{next_number}{extension}"
 
 def monitor_resources(file_path, interval=1):
     global monitoring
@@ -70,7 +70,7 @@ def execute_query():
     global monitoring
 
     try:
-        query_path = './query/clickhouse_by_hour.sql'
+        query_path = './query/clickhouse_by_hour_pg.sql'
 
         client = clickhouse_connect.get_client(host='localhost', user='default', password='oracle', session_id='benchmark_session', connect_timeout=15, database='qdaba')
 
@@ -78,10 +78,10 @@ def execute_query():
             query = query_file.read()
 
         # Get the next available filename
-        temp_file_path  = get_next_filename()
+        temp_file_path = get_next_filename()
 
         # Start the monitoring thread
-        monitor_thread = threading.Thread(target=monitor_resources, args=(temp_file_path , 1))
+        monitor_thread = threading.Thread(target=monitor_resources, args=(temp_file_path, 1))
         monitor_thread.start()
 
         # Execute the query and measure time
