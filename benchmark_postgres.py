@@ -1,32 +1,34 @@
-import os
-import time
-import psutil
-import threading
 import csv
-from dotenv import load_dotenv
-import psycopg2
+import os
+import threading
+import time
+
 import matplotlib.pyplot as plt
+import psutil
+import psycopg2
+from dotenv import load_dotenv
 
 load_dotenv()
 
 POSTGRES_CONFIG = {
-    'dbname': os.getenv('POSTGRES_DBNAME'),
-    'user': os.getenv('POSTGRES_USER'),
-    'password': os.getenv('POSTGRES_PASSWORD'),
-    'host': os.getenv('POSTGRES_HOST'),
-    'port': int(os.getenv('POSTGRES_PORT'))
+    "dbname": os.getenv("POSTGRES_DBNAME"),
+    "user": os.getenv("POSTGRES_USER"),
+    "password": os.getenv("POSTGRES_PASSWORD"),
+    "host": os.getenv("POSTGRES_HOST"),
+    "port": int(os.getenv("POSTGRES_PORT")),
 }
+
 
 def get_next_filename(extension=".csv"):
     """Finds the next available filename by scanning all CSV files and using the highest number + 1."""
-    
+
     existing_files = [f for f in os.listdir() if f.endswith(extension)]
     existing_numbers = []
 
     for filename in existing_files:
         try:
             # Split filename by underscores and take the last part before .csv
-            number_part = filename.split('_')[-1].replace(extension, "")
+            number_part = filename.split("_")[-1].replace(extension, "")
             number = int(number_part)  # Convert to integer
             existing_numbers.append(number)
         except ValueError:
@@ -35,23 +37,32 @@ def get_next_filename(extension=".csv"):
     next_number = max(existing_numbers) + 1 if existing_numbers else 1
     return f"postgres_by_hour_{next_number}{extension}"
 
+
 # Global variables to control monitoring
 monitoring = True
+
 
 def monitor_resources(file_path, interval=1):
     """Monitor CPU, memory, and disk usage and write directly to a CSV file."""
     global monitoring
-    
+
     start_time = time.time()  # Record the start time
 
     # Check if the file already exists
     write_header = not os.path.exists(file_path) or os.stat(file_path).st_size == 0
-    
-    with open(file_path, 'a', newline='') as file:
+
+    with open(file_path, "a", newline="") as file:
         writer = csv.writer(file)
         if write_header:
-            writer.writerow(["Elapsed Seconds", "CPU Usage (%)", "Memory Usage (%)", "Disk Usage (%)"])
-        
+            writer.writerow(
+                [
+                    "Elapsed Seconds",
+                    "CPU Usage (%)",
+                    "Memory Usage (%)",
+                    "Disk Usage (%)",
+                ]
+            )
+
             while monitoring:
                 iteration_start = time.time()
 
@@ -63,7 +74,7 @@ def monitor_resources(file_path, interval=1):
                 # Get CPU usage
                 cpu = psutil.cpu_percent(interval=None)
                 # Get Disk usage
-                disk = psutil.disk_usage('/').percent
+                disk = psutil.disk_usage("/").percent
 
                 # Write metrics
                 writer.writerow([round(elapsed_seconds, 2), cpu, memory, disk])
@@ -74,6 +85,7 @@ def monitor_resources(file_path, interval=1):
                 if elapsed < interval:
                     time.sleep(interval - elapsed)
 
+
 def execute_query():
     """Executes the SQL query and measures execution time."""
     global monitoring
@@ -81,18 +93,20 @@ def execute_query():
     try:
         # Initialize database connection
         connection = psycopg2.connect(**POSTGRES_CONFIG)
-        query_path = './query/postgres_by_hour.sql'
+        query_path = "./query/postgres_by_hour.sql"
 
         with connection.cursor() as cursor:
             # Read the SQL query from the file
-            with open(query_path, 'r') as query_file:
+            with open(query_path, "r") as query_file:
                 query = query_file.read()
 
             # Get the next available filename
-            temp_file_path  = get_next_filename()
+            temp_file_path = get_next_filename()
 
             # Start the monitoring thread
-            monitor_thread = threading.Thread(target=monitor_resources, args=(temp_file_path, 1))
+            monitor_thread = threading.Thread(
+                target=monitor_resources, args=(temp_file_path, 1)
+            )
             monitor_thread.start()
 
             # Execute the query and measure time
