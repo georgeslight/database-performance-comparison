@@ -33,7 +33,7 @@ def get_next_filename(extension=".csv"):
             continue  # Ignore files that don't have a number
 
     next_number = max(existing_numbers) + 1 if existing_numbers else 1
-    return f"postgres_{next_number}{extension}"
+    return f"postgres_by_hour_{next_number}{extension}"
 
 # Global variables to control monitoring
 monitoring = True
@@ -81,7 +81,7 @@ def execute_query():
     try:
         # Initialize database connection
         connection = psycopg2.connect(**POSTGRES_CONFIG)
-        query_path = './query/postgres_punctuality.sql'
+        query_path = './query/postgres_by_hour.sql'
 
         with connection.cursor() as cursor:
             # Read the SQL query from the file
